@@ -222,6 +222,131 @@
             "zones": [
                 "1"
             ]
+        },
+        {
+            "name": "[variables('AGN1VMName')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2018-10-01",
+            "location": "[variables('AZRegion')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('AGN1VMNICName'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_D2s_v3"
+                },
+                "storageProfile": {
+                    "osDisk": {
+                        "createOption": "fromImage",
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
+                        }
+                    },
+                    "imageReference": {
+                        "publisher": "MicrosoftSQLServer",
+                        "offer": "SQL2017-WS2016",
+                        "sku": "SQLDEV",
+                        "version": "latest"
+                    },
+                    "copy": [
+                        {
+                            "name": "dataDisks",
+                            "count": "[length(parameters('dataDisks'))]",
+                            "input": {
+                                "lun": "[parameters('dataDisks')[copyIndex('dataDisks')].lun]",
+                                "createOption": "[parameters('dataDisks')[copyIndex('dataDisks')].createOption]",
+                                "caching": "[parameters('dataDisks')[copyIndex('dataDisks')].caching]",
+                                "writeAcceleratorEnabled": "[parameters('dataDisks')[copyIndex('dataDisks')].writeAcceleratorEnabled]",
+                                "diskSizeGB": "[parameters('dataDisks')[copyIndex('dataDisks')].diskSizeGB]",
+                                "managedDisk": {
+                                    "id": "[coalesce(parameters('dataDisks')[copyIndex('dataDisks')].id, if(equals(parameters('dataDisks')[copyIndex('dataDisks')].name, json('null')), json('null'), resourceId('Microsoft.Compute/disks', parameters('dataDisks')[copyIndex('dataDisks')].name)))]",
+                                    "storageAccountType": "[parameters('dataDisks')[copyIndex('dataDisks')].storageAccountType]"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('AGN1VMNICName'))]"
+                        }
+                    ]
+                },
+                "osProfile": {
+                    "computerName": "[variables('AGN1VMName')]",
+                    "adminUsername": "[variables('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]",
+                    "windowsConfiguration": {
+                        "enableAutomaticUpdates": false,
+                        "provisionVmAgent": true
+                    }
+                }
+            }
+        },
+        {
+            "name": "[variables('AGN1VMName')]",
+            "type": "Microsoft.SqlVirtualMachine/SqlVirtualMachines",
+            "apiVersion": "2017-03-01-preview",
+            "location": "[variables('AZRegion')]",
+            "properties": {
+                "virtualMachineResourceId": "[resourceId('Microsoft.Compute/virtualMachines', variables('AGN1VMName'))]",
+                "sqlManagement": "Full",
+                "SqlServerLicenseType": "PAYG",
+                "AutoPatchingSettings": {
+                    "Enable": false
+                },
+                "KeyVaultCredentialSettings": {
+                    "Enable": false,
+                    "CredentialName": ""
+                },
+                "ServerConfigurationsManagementSettings": {
+                    "SQLConnectivityUpdateSettings": {
+                        "ConnectivityType": "PRIVATE",
+                        "Port": "1433",
+                        "SQLAuthUpdateUserName": "[variables('adminUsername')]",
+                        "SQLAuthUpdatePassword": "[parameters('adminPassword')]"
+                    },
+                    "SQLWorkloadTypeUpdateSettings": {
+                        "SQLWorkloadType": "GENERAL"
+                    },
+                    "SQLStorageUpdateSettings": {
+                        "DiskCount": "1",
+                        "DiskConfigurationType": "NEW",
+                        "StartingDeviceID": "2"
+                    },
+                    "AdditionalFeaturesServerConfigurations": {
+                        "IsRServicesEnabled": false
+                    }
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', variables('AGN1VMName'))]"
+            ]
+        },
+        {
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(variables('AGN1VMName'),'/joindomain')]",
+            "location": "[variables('AZRegion')]",
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', variables('AGN1VMName'))]"                
+            ],
+            "properties": {
+                "publisher": "Microsoft.Compute",
+                "type": "JsonADDomainExtension",
+                "typeHandlerVersion": "1.3",
+                "autoUpgradeMinorVersion": true,
+                "settings": {
+                    "Name": "[variables('DomainName')]",
+                    "User": "[concat(variables('DomainName'), '\\', variables('adminUsername'))]",
+                    "Restart": "true",
+                    "Options": "3"
+                    },
+            "protectedSettings": {
+                "Password": "[parameters('adminPassword')]"
+                }
+            }
         }
     ],
     "outputs": {
