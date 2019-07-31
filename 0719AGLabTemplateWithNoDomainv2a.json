@@ -1,0 +1,340 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "adminUsername": {
+            "type": "String"
+        },
+        "adminPassword": {
+            "type": "secureString"
+        }
+    },
+    "variables": {
+        "AD1VMName": "LabDC1",
+        "AD1VMNICName": "LabDCNIC",
+        "AD1VMPublicIPAddressName": "LabDCPublicIP",
+        "ADVMSize": "Standard_DS2_v2",
+        "AGN1VMName": "LabAGN1",
+        "AGN1VMNICName": "LabAGN1NIC",
+        "AGN1VMPublicIPAddressName": "LabAGN1PublicIP",
+        "AGN2VMName": "LabAGN2",
+        "AGN2VMNICName": "LabAGN2NIC",
+        "AGN2VMPublicIPAddressName": "LabAGN2PublicIP",
+        "AGVMSize": "Standard_D2s_v3",
+        "AZRegion": "eastus2",
+        "datastoragetype": "Premium_LRS",
+        "DomainName": "SQLHAU.LAB",
+        "networkSecurityGroupName": "LabNSG",
+        "nsgId": "[resourceId(resourceGroup().name, 'Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
+        "osStorageType": "Premium_LRS",
+        "SQLServerDataDisks": [
+            {
+                "lun": "0",
+                "createOption": "empty",
+                "caching": "ReadOnly",
+                "writeAcceleratorEnabled": false,
+                "diskSizeGB": "1023",
+                "managedDisk": {
+                    "storageAccountType": "[variables('datastoragetype')]",
+                    "id": null
+                }
+            }
+        ],
+        "subnetName": "LabSubnet",
+        "subnetRef": "[concat(variables('vnetId'), '/subnets/', variables('subnetName'))]",
+        "virtualNetworkName": "Labnet",
+        "vnetId": "[resourceId(resourceGroup().name,'Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]"
+    },
+    "resources": [
+        {
+            "name": "[variables('AD1VMNICName')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2018-10-01",
+            "location": "[variables('AZRegion')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]",
+                "[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]",
+                "[concat('Microsoft.Network/publicIpAddresses/', variables('AD1VMPublicIPAddressName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            },
+                            "privateIPAddress": "10.0.6.25",
+                            "privateIPAllocationMethod": "Static",
+                            "publicIpAddress": {
+                                "id": "[resourceId(resourceGroup().name, 'Microsoft.Network/publicIpAddresses', variables('AD1VMPublicIPAddressName'))]"
+                            }
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[variables('nsgId')]"
+                }
+            },
+            "tags": {}
+        },
+        {
+            "name": "[variables('networkSecurityGroupName')]",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2018-08-01",
+            "location": "[variables('AZRegion')]",
+            "properties": {
+                "securityRules": [
+                {
+                    "name": "RDP",
+                    "properties": {
+                        "priority": 300,
+                        "protocol": "TCP",
+                        "access": "Allow",
+                        "direction": "Inbound",
+                        "sourceAddressPrefix": "*",
+                        "sourcePortRange": "*",
+                        "destinationAddressPrefix": "*",
+                        "destinationPortRange": "3389"
+                    }
+                }
+            ]
+            },
+            "tags": {}
+        },
+        {
+            "name": "[variables('virtualNetworkName')]",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2018-08-01",
+            "location": "[variables('AZRegion')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                "10.0.6.0/24"
+            ]
+                },
+                "dhcpoptions": {
+                    "dnsServers": [
+                        "10.0.6.25"
+                    ]
+                },
+                "subnets": [
+                {
+                    "name": "[variables('subnetName')]",
+                    "properties": {
+                        "addressPrefix": "10.0.6.0/24"
+                    }
+                }
+            ]
+            },
+            "tags": {}
+        },
+        {
+            "name": "[variables('AD1VMPublicIPAddressName')]",
+            "type": "Microsoft.Network/publicIpAddresses",
+            "apiVersion": "2018-08-01",
+            "location": "[variables('AZRegion')]",
+            "properties": {
+                "publicIpAllocationMethod": "Static"
+            },
+            "sku": {
+                "name": "Standard"
+            },
+            "zones": [
+                "1"
+            ],
+            "tags": {}
+        },
+        {
+            "name": "[variables('AGN1VMNICName')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2018-10-01",
+            "location": "[variables('AZRegion')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]",
+                "[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]",
+                "[concat('Microsoft.Network/publicIpAddresses/', variables('AGN1VMPublicIPAddressName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "AGN1VMIPConfig",
+                        "properties": {
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            },
+                            "privateIPAddress": "10.0.6.100",
+                            "privateIPAllocationMethod": "Static",
+                            "publicIpAddress": {
+                                "id": "[resourceId(resourceGroup().name, 'Microsoft.Network/publicIpAddresses', variables('AGN1VMPublicIPAddressName'))]"
+                            }
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[variables('nsgId')]"
+                }
+            },
+            "tags": {}
+        },
+        {
+            "name": "[variables('AGN1VMPublicIPAddressName')]",
+            "type": "Microsoft.Network/publicIpAddresses",
+            "apiVersion": "2018-08-01",
+            "location": "[variables('AZRegion')]",
+            "properties": {
+                "publicIpAllocationMethod": "Static"
+            },
+            "sku": {
+                "name": "Standard"
+            },
+            "zones": [
+                "2"
+            ],
+            "tags": {}
+        },
+        {
+            "name": "[variables('AGN2VMNICName')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2018-10-01",
+            "location": "[variables('AZRegion')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]",
+                "[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]",
+                "[concat('Microsoft.Network/publicIpAddresses/', variables('AGN2VMPublicIPAddressName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "AGN2VMIPConfig",
+                        "properties": {
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            },
+                            "privateIPAddress": "10.0.6.101",
+                            "privateIPAllocationMethod": "Static",
+                            "publicIpAddress": {
+                                "id": "[resourceId(resourceGroup().name, 'Microsoft.Network/publicIpAddresses', variables('AGN2VMPublicIPAddressName'))]"
+                            }
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[variables('nsgId')]"
+                }
+            },
+            "tags": {}
+        },
+        {
+            "name": "[variables('AGN2VMPublicIPAddressName')]",
+            "type": "Microsoft.Network/publicIpAddresses",
+            "apiVersion": "2018-08-01",
+            "location": "[variables('AZRegion')]",
+            "properties": {
+                "publicIpAllocationMethod": "Static"
+            },
+            "sku": {
+                "name": "Standard"
+            },
+            "zones": [
+                "3"
+            ],
+            "tags": {}
+        },
+        {
+            "name": "[variables('AD1VMName')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2018-10-01",
+            "location": "[variables('AZRegion')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', variables('AD1VMNICName'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[variables('ADVMSize')]"
+                },
+                "storageProfile": {
+                    "osDisk": {
+                        "createOption": "fromImage",
+                        "managedDisk": {
+                            "storageAccountType": "[variables('osStorageType')]"
+                        }
+                    },
+                    "imageReference": {
+                        "publisher": "cloud-infrastructure-services",
+                        "offer": "ad-dc-2019",
+                        "sku": "ad-dc-2019",
+                        "version": "0.0.1"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('AD1VMNICName'))]"
+                        }
+                    ]
+                },
+                "osProfile": {
+                    "computerName": "[variables('AD1VMName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]",
+                    "windowsConfiguration": {
+                        "enableAutomaticUpdates": false,
+                        "provisionVmAgent": true
+                    }
+                }
+            },
+            "plan": {
+                "name": "ad-dc-2019",
+                "publisher": "cloud-infrastructure-services",
+                "product": "ad-dc-2019"
+            },
+            "resources": [
+                {
+                    "name": "[variables('AD1VMName')]/ConfigureADonLabDC",
+                    "type": "extensions",
+                    "location": "[variables('AZRegion')]",
+                    "apiVersion": "2018-06-30",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Compute/virtualMachines', variables('AD1VMName'))]"
+                    ],
+                    "properties": {
+                            "publisher": "Microsoft.Powershell",
+                            "type": "DSC",
+                            "typeHandlerVersion": "2.77",
+                            "autoUpgradeMinorVersion": true
+                        },
+                        "protectedSettings": {
+                            "items": {
+                                "Credential": {
+                                    "username": "[parameters('adminUsername')]",
+                                    "password": "[parameters('adminPassword')]"
+                                }
+                        },
+                        "settings": {
+                            "configuration": {
+                                "url": "https://github.com/allanhirt/LabArtifacts/blob/master/DSC/DSCStuff.zip",
+                                "script": "SQLHAUDC1.ps1",
+                                "function": "LabDC1"
+                            },
+                            "configurationArguments": {
+                                "ActionAfterReboot": "ContinueConfiguration",
+                                "AllowModuleOverwrite": true,
+                                "ConfigurationMode": "ApplyOnly",
+                                "NodeConfigurationName": "[variables('AD1VMName')]",
+                                "RebootIfNeeded": true
+                            }
+                        }
+                    }
+                }
+            ],
+            "zones": ["1"]    
+        }
+    ],
+    "outputs": {
+        "adminUsername": {
+            "type": "string",
+            "value": "[parameters('adminUsername')]"
+        }
+    }
+}
