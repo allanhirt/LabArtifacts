@@ -257,7 +257,7 @@
                     "osDisk": {
                         "createOption": "fromImage",
                         "managedDisk": {
-                            "storageAccountType": "variables('osStorageType')"
+                            "storageAccountType": "[variables('osStorageType')]"
                         }
                     },
                     "imageReference": {
@@ -294,58 +294,113 @@
             ]
         },
         {
-            "name": "[parameters('adminUsername')]",
-            "type": "Microsoft.Automation/automationAccounts",
-            "apiVersion": "2015-10-31",
+            "name": "[variables('AGN1VMName')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2019-03-01",
             "location": "[variables('AZRegion')]",
-            "dependsOn": [ ],
-            "tags": { },
-            "properties": {
-                "sku": {
-                    "name": "Free"
-                }
-            }
-        },
-        {
-            "name": "Microsoft.Powershell.DSC",
-            "type": "extensions",
-            "location": "[variables('AZRegion')]",
-            "apiVersion": "2018-06-30",
             "dependsOn": [
-                "[resourceId('Microsoft.Compute/virtualMachines', variables('AD1VMName'))]"
+                "[concat('Microsoft.Network/networkInterfaces/', variables('AGN1VMNICName'))]"
             ],
             "properties": {
-                "publisher": "Microsoft.Powershell",
-                "type": "DSC",
-                "typeHandlerVersion": "2.77",
-                "autoUpgradeMinorVersion": true,
-                "protectedSettings": {
-                    "items": {
-                        "registrationKeyPrivate": "[listKeys(resourceId('Microsoft.Automation/automationAccounts/', parameters('adminUsername')), '2018-06-30').Keys[0].value]"
-                    }
+                "hardwareProfile": {
+                    "vmSize": "[variables('AGVMSize')]"
                 },
-                "settings": {
-                    "wmfVersion": "latest",
-                    "configuration": {
-                        "url": "https://github.com/allanhirt/LabArtifacts/blob/master/DSC/DSCStuff.zip",
-                        "script": "dscDC.ps1",
-                        "function": "LabDC1"
-                    },
-                    "configurationArguments": {
-                        "NodeConfigurationName": "[variables('AD1VMName')]",
-                        "domainName": "[parameters('DomainName')]",
-                        "domainAdminCredentials": {
-                            "UserName": "[parameters('adminUsername')]",
-                            "Password": "[parameters('adminPassword')]"
+                "storageProfile": {
+                    "osDisk": {
+                        "createOption": "fromImage",
+                        "managedDisk": {
+                            "storageAccountType": "[variables('osStorageType')]"
                         }
                     },
-                    "configurationData": {
-                        "url": "https://github.com/allanhirt/LabArtifacts/tree/master/DSC/AD_DSC_v3.psd1"
+                    "imageReference": {
+                        "publisher": "MicrosoftSQLServer",
+                        "offer": "SQL2017-WS2016",
+                        "sku": "SQLDEV",
+                        "version": "latest"
+                    },
+                    "copy": [
+                        {
+                            "name": "dataDisks",
+                            "count": "[length(variables('SQLServerDataDisks'))]",
+                            "input": {
+                                "lun": "[variables('SQLServerDataDisks')[copyIndex('dataDisks')].lun]",
+                                "createOption": "[variables('SQLServerDataDisks')[copyIndex('dataDisks')].createOption]",
+                                "caching": "[variables('SQLServerDataDisks')[copyIndex('dataDisks')].caching]",
+                                "writeAcceleratorEnabled": "[variables('SQLServerDataDisks')[copyIndex('dataDisks')].writeAcceleratorEnabled]",
+                                "diskSizeGB": "[variables('SQLServerDataDisks')[copyIndex('dataDisks')].diskSizeGB]",
+                                "managedDisk": {
+                                    "id": "[coalesce(variables('SQLServerDataDisks')[copyIndex('dataDisks')].id, if(equals(variables('SQLServerDataDisks')[copyIndex('dataDisks')].name, json('null')), json('null'), resourceId('Microsoft.Compute/disks', variables('SQLServerDataDisks')[copyIndex('dataDisks')].name)))]",
+                                    "storageAccountType": "[variables('SQLServerDataDisks')[copyIndex('dataDisks')].storageAccountType]"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('AGN1VMNICName'))]"
+                        }
+                    ]
+                },
+                "osProfile": {
+                    "computerName": "[variables('AGN1VMName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminUserPassword')]",
+                    "windowsConfiguration": {
+                        "enableAutomaticUpdates": false,
+                        "provisionVmAgent": true
+                    }
+                },
+                "licenseType": "Windows_Server",
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": false           
+                        }
+                    }
+            },
+            "zones": [
+                "2"
+            ]
+        },
+        {
+            "name": "[variables('AGN1VMName')]",
+            "type": "Microsoft.SqlVirtualMachine/SqlVirtualMachines",
+            "apiVersion": "2017-03-01-preview",
+            "location": "[variables('AZRegion')]",
+            "properties": {
+                "virtualMachineResourceId": "[resourceId('Microsoft.Compute/virtualMachines', variables('AGN1VMName'))]",
+                "sqlManagement": "Full",
+                "SqlServerLicenseType": "PAYG",
+                "AutoPatchingSettings": {
+                    "Enable": false
+                },
+                "KeyVaultCredentialSettings": {
+                    "Enable": false
+                },
+                "ServerConfigurationsManagementSettings": {
+                    "SQLConnectivityUpdateSettings": {
+                        "ConnectivityType": "PRIVATE",
+                        "Port": "1433",
+                        "SQLAuthUpdateUserName": "[parameters('adminUsername')]",
+                        "SQLAuthUpdatePassword": "[parameters('adminPassword')]"
+                    },
+                    "SQLWorkloadTypeUpdateSettings": {
+                        "SQLWorkloadType": "GENERAL"
+                    },
+                    "SQLStorageUpdateSettings": {
+                        "DiskCount": "1",
+                        "DiskConfigurationType": "NEW",
+                        "StartingDeviceID": "2"
+                    },
+                    "AdditionalFeaturesServerConfigurations": {
+                        "IsRServicesEnabled": false
                     }
                 }
             },
-            "zones":
-                ["1"]
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', variables('AGN1VMName'))]"
+            ]
         }
     ],
     "outputs": {
@@ -355,3 +410,5 @@
         }
     }
 }
+
+
