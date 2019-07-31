@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>xComputerManagement</id>
+    <version>4.1.0.0</version>
+    <authors>Microsoft Corporation</authors>
+    <owners>Microsoft Corporation</owners>
+    <licenseUrl>https://github.com/PowerShell/xComputerManagement/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/PowerShell/xComputerManagement</projectUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>The xComputerManagement module is originally part of the Windows PowerShell Desired State Configuration (DSC) Resource Kit. This version has been modified for use in Azure. This module contains the xComputer and xDisk resources. These DSC Resources allow you to perform computer management tasks, like joining a domain or initializing disks.
+
+All of the resources in the DSC Resource Kit are provided AS IS, and are not supported through any Microsoft standard support program or service.</description>
+    <releaseNotes>- xScheduledTask:
+  - Update existing Scheduled Task using SetScheduleTask
+    instead of UnRegister/Register - See [Issue 134](https://github.com/PowerShell/xComputerManagement/issues/134).
+- Fix master branch AppVeyor badge link URL in README.MD - See [Issue 140](https://github.com/PowerShell/xComputerManagement/issues/140).
+- Fix deletion of scheduled task with unknown or empty task trigger.
+  Get-TargetResource returns an empty ScheduleType string if the task
+  trigger is empty or unknown - See [Issue
+  137](https://github.com/PowerShell/xComputerManagement/issues/137).
+- Added dependency information for xScheduledTask to README.MD.</releaseNotes>
+    <copyright>(c) 2017 Microsoft Corporation. All rights reserved.</copyright>
+    <tags>DesiredStateConfiguration DSC DSCResourceKit DSCResource PSModule PSIncludes_DscResource PSDscResource_xComputer PSDscResource_xOfflineDomainJoin PSDscResource_xPowerPlan PSDscResource_xScheduledTask PSDscResource_xVirtualMemory</tags>
+  </metadata>
+</package>
