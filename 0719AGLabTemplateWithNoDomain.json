@@ -304,7 +304,7 @@
                 "sku": {
                     "name": "Free"
                 }
-            },
+            }
         },
         {
             "name": "Microsoft.Powershell.DSC",
@@ -327,23 +327,25 @@
                 "settings": {
                     "wmfVersion": "latest",
                     "configuration": {
-                        "url": "[concat(variables('_artifactsLocation'), '/', variables('dscDCArchiveFolder'), '/', variables('dscDCArchiveFileName'))]",
+                        "url": "https://github.com/allanhirt/TestAD/raw/master/DSC/DSCStuff.zip",
                         "script": "dscDC.ps1",
-                        "function": "Main"
+                        "function": "LabDC1"
                     },
                     "configurationArguments": {
-                        "nodeName": "[variables('AD1VMName')]",
+                        "NodeConfigurationName": "[variables('AD1VMName')]",
                         "domainName": "[parameters('DomainName')]",
                         "domainAdminCredentials": {
                             "UserName": "[parameters('adminUsername')]",
                             "Password": "[parameters('adminPassword')]"
-                        },
+                        }
                     },
                     "configurationData": {
-                        "url": "[concat(parameters('_artifactsLocation'), '/DSC/dscDCConfigData.psd1')]"
+                        "url": "https://github.com/allanhirt/LabArtifacts/tree/master/DSC/AD_DSC_v3.psd1"
                     }
                 }
-            }
+            },
+            "zones":
+                ["1"]
         }
     ],
     "outputs": {
