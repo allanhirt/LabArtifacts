@@ -296,7 +296,7 @@
                         "settings": {
                             "wmfVersion": "latest",
                             "configuration": {
-                                "url": "https://github.com/allanhirt/LabArtifacts/blob/master/DSC/ADDSC3.zip",
+                                "url": "https://github.com/allanhirt/LabArtifacts/blob/master/DSC/ADDSCStuff.zip",
                                 "script": "SQLHAUDC1.ps1",
                                 "function": "LabDC1"
                             },
