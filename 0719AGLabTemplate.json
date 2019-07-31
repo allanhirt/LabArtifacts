@@ -1,63 +1,38 @@
 {
     "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
-    "parameters": {
-        "DomainName": {
-            "value": "SQLHAU.LAB" 
-        },
-        "adminUsername": {
-            "value": "sqlhauadmin"
-        },
+    "variables": {
         "adminPassword": {
             "type": "secureString"
-        },
-        "AD1Name": {
-            "value": "LabDC1"
-        },
-        "AD1NICName": {
-            "value": "LabNIC"
-        },
-        "AD1PublicIPAddressName": {
-            "value": "LabDCPublicIP"
-        },
-        "AGN1VMName": {
-            "value": "LabAGN1"
-        },
-        "AGN1VMNICName": {
-            "value": "LabAGN1NIC"
-        },
-        "AGN1VMPublicIPAddressName": {
-            "value": "LabAGN1PublicIP"
-        },
-        "networkSecurityGroupName": {
-            "value": "LabNSG"
-        },
-        "subnetName": {
-            "value": "LabSubnet"
-        },
-        "AZRegion": {
-            "value": "eastus2"
-        },
-
-        "virtualNetworkName": {
-            "value": "Labnet"
         }
     },
     "variables": {
-        "nsgId": "[resourceId(resourceGroup().name, 'Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]",
-        "vnetId": "[resourceId(resourceGroup().name,'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName'))]",
-        "subnetRef": "[concat(variables('vnetId'), '/subnets/', parameters('subnetName'))]"
+        "adminUsername": "sqlhauadmin",
+        "AD1Name": "LabDC1",
+        "AD1NICName": "LabDCNIC",
+        "AD1PublicIPAddressName": "LabDCPublicIP",
+        "AGN1VMName": "LabAGN1",
+        "AGN1VMNICName": "LabAGN1NIC",
+        "AGN1VMPublicIPAddressName": "LabAGN1PublicIP",
+        "AZRegion": "eastus2",
+        "DomainName": "SQLHAU.LAB",
+        "networkSecurityGroupName": "LabNSG",
+        "nsgId": "[resourceId(resourceGroup().name, 'Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
+        "subnetName": "LabSubnet",
+        "subnetRef": "[concat(variables('vnetId'), '/subnets/', variables('subnetName'))]",
+        "virtualNetworkName": "Labnet",
+        "vnetId": "[resourceId(resourceGroup().name,'Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]"
     },
     "resources": [
         {
-            "name": "[parameters('AD1VMNICName')]",
+            "name": "[variables('AD1VMNICName')]",
             "type": "Microsoft.Network/networkInterfaces",
             "apiVersion": "2018-10-01",
-            "location": "[parameters('AZRegion')]",
+            "location": "[variables('AZRegion')]",
             "dependsOn": [
-                "[concat('Microsoft.Network/networkSecurityGroups/', parameters('networkSecurityGroupName'))]",
-                "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]",
-                "[concat('Microsoft.Network/publicIpAddresses/', parameters('AD1VMPublicIPAddressName'))]"
+                "[concat('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]",
+                "[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]",
+                "[concat('Microsoft.Network/publicIpAddresses/', variables('AD1VMPublicIPAddressName'))]"
             ],
             "properties": {
                 "ipConfigurations": [
@@ -70,7 +45,7 @@
                             "privateIPAddress": "10.0.6.25",
                             "privateIPAllocationMethod": "Static",
                             "publicIpAddress": {
-                                "id": "[resourceId(resourceGroup().name, 'Microsoft.Network/publicIpAddresses', parameters('AD1VMPublicIPAddressName'))]"
+                                "id": "[resourceId(resourceGroup().name, 'Microsoft.Network/publicIpAddresses', variables('AD1VMPublicIPAddressName'))]"
                             }
                         }
                     }
@@ -82,10 +57,10 @@
             "tags": {}
         },
         {
-            "name": "[parameters('networkSecurityGroupName')]",
+            "name": "[variables('networkSecurityGroupName')]",
             "type": "Microsoft.Network/networkSecurityGroups",
             "apiVersion": "2018-08-01",
-            "location": "[parameters('AZRegion')]",
+            "location": "[variables('AZRegion')]",
             "properties": {
                 "securityRules": [
                 {
@@ -106,10 +81,10 @@
             "tags": {}
         },
         {
-            "name": "[parameters('virtualNetworkName')]",
+            "name": "[variables('virtualNetworkName')]",
             "type": "Microsoft.Network/virtualNetworks",
             "apiVersion": "2018-08-01",
-            "location": "[parameters('AZRegion')]",
+            "location": "[variables('AZRegion')]",
             "properties": {
                 "addressSpace": {
                     "addressPrefixes": [
@@ -123,7 +98,7 @@
                 },
                 "subnets": [
                 {
-                    "name": "[parameters('subnetName')]",
+                    "name": "[variables('subnetName')]",
                     "properties": {
                         "addressPrefix": "10.0.6.0/24"
                     }
@@ -133,10 +108,10 @@
             "tags": {}
         },
         {
-            "name": "[parameters('AD1VMPublicIPAddressName')]",
+            "name": "[variables('AD1VMPublicIPAddressName')]",
             "type": "Microsoft.Network/publicIpAddresses",
             "apiVersion": "2018-08-01",
-            "location": "[parameters('AZRegion')]",
+            "location": "[variables('AZRegion')]",
             "properties": {
                 "publicIpAllocationMethod": "Static"
             },
@@ -149,12 +124,12 @@
             "tags": {}
         },
         {
-            "name": "[parameters('AD1VMName')]",
+            "name": "[variables('AD1VMName')]",
             "type": "Microsoft.Compute/virtualMachines",
             "apiVersion": "2018-10-01",
-            "location": "[parameters('AZRegion')]",
+            "location": "[variables('AZRegion')]",
             "dependsOn": [
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('AD1VMNICName'))]"
+                "[concat('Microsoft.Network/networkInterfaces/', variables('AD1VMNICName'))]"
             ],
             "properties": {
                 "hardwareProfile": {
@@ -176,13 +151,13 @@
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('AD1VMNICName'))]"
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('AD1VMNICName'))]"
                         }
                     ]
                 },
                 "osProfile": {
-                    "computerName": "[parameters('AD1VMName')]",
-                    "adminUsername": "[parameters('adminUsername')]",
+                    "computerName": "[variables('AD1VMName')]",
+                    "adminUsername": "[variables('adminUsername')]",
                     "adminPassword": "[parameters('adminPassword')]",
                     "windowsConfiguration": {
                         "enableAutomaticUpdates": false,
@@ -196,17 +171,17 @@
             ]
         },
         {
-            "name": "[parameters('AGN1VMName')]",
+            "name": "[variables('AGN1VMName')]",
             "type": "Microsoft.Compute/virtualMachines",
             "apiVersion": "2018-06-01",
-            "location": "[parameters('AZRegion')]",
+            "location": "[variables('AZRegion')]",
             "dependsOn": [
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('AGN1VMNICName'))]"
+                "[concat('Microsoft.Network/networkInterfaces/', variables('AGN1VMNICName'))]"
             ],
             "properties": {
                 "osProfile": {
-                    "computerName": "[parameters('AGN1VMName')]",
-                    "adminUsername": "[parameters('adminUsername')]",
+                    "computerName": "[variables('AGN1VMName')]",
+                    "adminUsername": "[variables('adminUsername')]",
                     "adminPassword": "[parameters('adminPassword')]",
                     "windowsConfiguration": {
                         "provisionVmAgent": "true"
@@ -243,7 +218,7 @@
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('AGN1VMNICName'))]"
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('AGN1VMNICName'))]"
                         }
                     ]
                 }
@@ -253,16 +228,16 @@
             ]
         },
         {
-            "name": "[parameters('AGN1VMName')]",
+            "name": "[variables('AGN1VMName')]",
             "type": "Microsoft.SqlVirtualMachine/SqlVirtualMachines",
             "apiVersion": "2017-03-01-preview",
-            "location": "[parameters('AZRegion')]",
+            "location": "[variables('AZRegion')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Compute/virtualMachines', parameters('AGN1VMName'))]",
-                "[concat('Microsoft.Compute/virtualMachines/', parameters('AGN1VMName'))]"
+                "[resourceId('Microsoft.Compute/virtualMachines', variables('AGN1VMName'))]",
+                "[concat('Microsoft.Compute/virtualMachines/', variables('AGN1VMName'))]"
             ],
             "properties": {
-                "virtualMachineResourceId": "[resourceId('Microsoft.Compute/virtualMachines', parameters('AGN1VMName'))]",
+                "virtualMachineResourceId": "[resourceId('Microsoft.Compute/virtualMachines', variables('AGN1VMName'))]",
                 "AutoPatchingSettings": {
                     "Enable": false
                 },
@@ -292,14 +267,14 @@
             }
         },
         {
-            "name": "[parameters('AGN1VMNICName')]",
+            "name": "[variables('AGN1VMNICName')]",
             "type": "Microsoft.Network/networkInterfaces",
             "apiVersion": "2018-10-01",
-            "location": "[parameters('AZRegion')]",
+            "location": "[variables('AZRegion')]",
             "dependsOn": [
-                "[concat('Microsoft.Network/networkSecurityGroups/', parameters('networkSecurityGroupName'))]",
-                "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]",
-                "[concat('Microsoft.Network/publicIpAddresses/', parameters('AGN1VMPublicIPAddressName'))]"
+                "[concat('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]",
+                "[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]",
+                "[concat('Microsoft.Network/publicIpAddresses/', variables('AGN1VMPublicIPAddressName'))]"
             ],
             "properties": {
                 "ipConfigurations": [
@@ -312,7 +287,7 @@
                             "privateIPAddress": "10.0.6.100",
                             "privateIPAllocationMethod": "Static",
                             "publicIpAddress": {
-                                "id": "[resourceId(resourceGroup().name, 'Microsoft.Network/publicIpAddresses', parameters('AGN1VMPublicIPAddressName'))]"
+                                "id": "[resourceId(resourceGroup().name, 'Microsoft.Network/publicIpAddresses', variables('AGN1VMPublicIPAddressName'))]"
                             }
                         }
                     }
@@ -324,10 +299,10 @@
             "tags": {}
         },
         {
-            "name": "[parameters('AGN1VMPublicIPAddressName')]",
+            "name": "[variables('AGN1VMPublicIPAddressName')]",
             "type": "Microsoft.Network/publicIpAddresses",
             "apiVersion": "2018-08-01",
-            "location": "[parameters('AZRegion')]",
+            "location": "[variables('AZRegion')]",
             "properties": {
                 "publicIpAllocationMethod": "Static"
             },
@@ -343,7 +318,7 @@
     "outputs": {
         "adminUsername": {
             "type": "string",
-            "value": "[parameters('adminUsername')]"
+            "value": "[variables('adminUsername')]"
         }
     }
 }
