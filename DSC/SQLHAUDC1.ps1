@@ -141,11 +141,11 @@ Configuration LabDC1
 
 }
 
-#$cd = @{
-#    AllNodes = @(
-#        @{
-#            NodeName = 'localhost'
-#            PSDscAllowPlainTextPassword = $true
-#        }
-#    )
-#}
+$cd = @{
+    AllNodes = @(
+        @{
+            NodeName = 'localhost'
+            PSDscAllowPlainTextPassword = $true
+        }
+    )
+}
